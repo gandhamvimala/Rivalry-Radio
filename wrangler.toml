@@ -1,0 +1,11 @@
+name = "rivalry-radio"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# Optional: enables the daily generation cap in src/index.js.
+# Create with:  npx wrangler kv namespace create USAGE
+# then paste the id it prints below and uncomment.
+#
+# [[kv_namespaces]]
+# binding = "USAGE"
+# id = "PASTE_ID_HERE"
