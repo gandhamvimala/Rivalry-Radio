@@ -13,25 +13,24 @@ import { PAGE_HTML } from "./page.js";
 
 // ---------- config ----------
 
-const GEMINI_MODEL = "gemini-2.5-flash"; // adjust if needed
+const GEMINI_MODEL = "gemini-3.5-flash";// adjust if needed
 const MAX_SIDE_LEN = 60;
 const MAX_LINE_LEN = 300;   // per spoken line sent to ElevenLabs
 const MAX_LINES = 12;
 const DAILY_CAP = 50;       // script generations per day (only enforced if KV bound)
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX_REQ = 10;    // per IP per window, per isolate (best-effort)
+const RATE_MAX_REQ = 30;    // per IP per window, per isolate (best-effort)
 
 // Verify these in your ElevenLabs dashboard (Voices -> copy voice ID).
 // These are ElevenLabs premade voices; swap freely.
 const VOICES = {
-  HOST:  "pNInz6obpgDQGcFmaJgB", // deep, smooth announcer (Adam)
-  FAN_A: "TxGEqnHWrfWFTfGW9XjX", // energetic (Josh)
-  FAN_B: "VR6AewLTigWG4xSOukaG", // gravelly (Arnold)
+  HOST:  "nPczCjzI2devNBz1zQrb", // deep, smooth announcer (Adam)
+  FAN_A: "pNInz6obpgDQGcFmaJgB", // energetic (Josh)
+  FAN_B: "pFZP5JQG7iQjIQuC4Bku", // gravelly (Arnold)
 };
 
 // ---------- tiny per-isolate rate limiter (best-effort; add a Cloudflare
 // dashboard rate-limiting rule on /api/* for real protection) ----------
-
 const hits = new Map();
 function rateLimited(ip) {
   const now = Date.now();
@@ -57,12 +56,14 @@ THE RIVALRY: ${sideA} vs ${sideB}
 TONE: ${tone}
 
 RULES:
-- Exactly 3 speakers: HOST, FAN_A (devoted to ${sideA}), FAN_B (devoted to ${sideB})
-- Structure: HOST opens with a 1-2 sentence intro, then FAN_A and FAN_B alternate. HOST may interject once in the middle. HOST closes with one line.
+RULES:
+- Exactly 3 speakers: HOST, FAN_A, FAN_B. On air they have names: the HOST is Rex, a smooth late-night radio veteran. FAN_A is Max, devoted to ${sideA}, brash and overconfident. FAN_B is Poppy, devoted to ${sideB}, calm, cutting, devastatingly polite. They address each other by name in the dialogue. The "speaker" field in the JSON must still be exactly HOST, FAN_A, or FAN_B.
+- Structure: HOST opens with a 1-2 sentence intro welcoming listeners and introducing Max and Poppy, then FAN_A and FAN_B alternate. HOST may interject once in the middle. HOST closes with one line.
 - 10 to 12 lines total. Each line is 1-2 sentences, max 30 words. These will be spoken aloud, so write for the ear: contractions, interruptions, rhetorical jabs, no bullet points, no stage directions.
 - The fans should escalate: start reasonable, end absurd. Specific details beat generic trash talk. If you don't know real facts about the rivalry, invent oddly specific personal anecdotes instead.
 - The fans never insult each other personally in a mean way. They attack the rival thing, not the rival person. Keep it PG-13.
 - If the rivalry involves real people, keep claims obviously comedic or factual — no fabricated scandals or offensive content.
+- Write for expressive voice acting: use exclamation marks, ellipses for dramatic pauses, an occasional ALL CAPS word for emphasis, and dashes for interruptions. Max sounds genuinely worked up; Poppy stays composed but lands sharper blows. Rex stays smooth and amused by contrast.
 - The HOST's closing line should refuse to pick a winner in a funny way.
 
 OUTPUT FORMAT:
@@ -90,7 +91,11 @@ async function callGemini(env, prompt, temperature) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature, maxOutputTokens: 1200 },
+      generationConfig: {
+        temperature,
+        maxOutputTokens: 4000,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
@@ -159,7 +164,7 @@ async function handleSpeak(request, env) {
       body: JSON.stringify({
         text,
         model_id: "eleven_turbo_v2_5",
-        voice_settings: { stability: 0.4, similarity_boost: 0.75 },
+        voice_settings: { stability: 0.3, similarity_boost: 0.75, style: 0.6 },
       }),
     }
   );
