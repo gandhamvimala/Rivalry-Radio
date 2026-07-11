@@ -13,7 +13,7 @@ import { PAGE_HTML } from "./page.js";
 
 // ---------- config ----------
 
-const GEMINI_MODEL = "gemini-3.5-flash";// adjust if needed
+const GEMINI_MODEL = "gemini-3.5-flash";
 const MAX_SIDE_LEN = 60;
 const MAX_LINE_LEN = 300;   // per spoken line sent to ElevenLabs
 const MAX_LINES = 12;
@@ -21,12 +21,11 @@ const DAILY_CAP = 50;       // script generations per day (only enforced if KV b
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_REQ = 30;    // per IP per window, per isolate (best-effort)
 
-// Verify these in your ElevenLabs dashboard (Voices -> copy voice ID).
-// These are ElevenLabs premade voices; swap freely.
+// ElevenLabs premade voices (free-tier API compatible); swap freely.
 const VOICES = {
-  HOST:  "nPczCjzI2devNBz1zQrb", // deep, smooth announcer (Adam)
-  FAN_A: "pNInz6obpgDQGcFmaJgB", // energetic (Josh)
-  FAN_B: "pFZP5JQG7iQjIQuC4Bku", // gravelly (Arnold)
+  HOST:  "hpp4J3VqNfWAUOO0d1Us", // Bella - professional, warm (Rex... or rather, a female host)
+  FAN_A: "PASTE_YOUR_PICK_HERE", // Nubee / Witty / James (Max)
+  FAN_B: "pFZP5JQG7iQjIQuC4Bku", // Lily - velvety British (Poppy)
 };
 
 // ---------- tiny per-isolate rate limiter (best-effort; add a Cloudflare
@@ -55,7 +54,6 @@ function buildPrompt(sideA, sideB, tone) {
 THE RIVALRY: ${sideA} vs ${sideB}
 TONE: ${tone}
 
-RULES:
 RULES:
 - Exactly 3 speakers: HOST, FAN_A, FAN_B. On air they have names: the HOST is Rex, a smooth late-night radio veteran. FAN_A is Max, devoted to ${sideA}, brash and overconfident. FAN_B is Poppy, devoted to ${sideB}, calm, cutting, devastatingly polite. They address each other by name in the dialogue. The "speaker" field in the JSON must still be exactly HOST, FAN_A, or FAN_B.
 - Structure: HOST opens with a 1-2 sentence intro welcoming listeners and introducing Max and Poppy, then FAN_A and FAN_B alternate. HOST may interject once in the middle. HOST closes with one line.
@@ -134,13 +132,14 @@ async function handleScript(request, env) {
   const temperature = tone === "unhinged" ? 1.1 : 1.0;
   const prompt = buildPrompt(sideA, sideB, tone);
 
-  // one retry on parse failure
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // up to 3 attempts: absorbs transient Gemini 503s and JSON parse failures
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const raw = await callGemini(env, prompt, temperature);
       return json({ script: parseScript(raw), sideA, sideB, tone });
     } catch (err) {
-      if (attempt === 1) return json({ error: `Script generation failed: ${err.message}` }, 502);
+      if (attempt === 2) return json({ error: `Script generation failed: ${err.message}` }, 502);
+      await new Promise((r) => setTimeout(r, 1200));
     }
   }
 }
