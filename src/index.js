@@ -24,9 +24,9 @@ const RATE_MAX_REQ = 30;    // per IP per window, per isolate (best-effort)
 // Verify these in your ElevenLabs dashboard (Voices -> copy voice ID).
 // These are ElevenLabs premade voices; swap freely.
 const VOICES = {
-  HOST:  "nPczCjzI2devNBz1zQrb", // deep, smooth announcer (Adam)
-  FAN_A: "pNInz6obpgDQGcFmaJgB", // energetic (Josh)
-  FAN_B: "pFZP5JQG7iQjIQuC4Bku", // gravelly (Arnold)
+  HOST:  "hpp4J3VqNfWAUOO0d1Us", // Bella - professional, warm (Rex... or rather, a female host)
+  FAN_A: "PASTE_YOUR_PICK_HERE", // Nubee / Witty / James (Max)
+  FAN_B: "pFZP5JQG7iQjIQuC4Bku", // Lily - velvety British (Poppy)
 };
 
 // ---------- tiny per-isolate rate limiter (best-effort; add a Cloudflare
